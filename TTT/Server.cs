@@ -14,20 +14,17 @@ namespace TTT
         private readonly TcpListener listener;
         private readonly Thread thread;
         private readonly List<Connection> _connections;
-
         public Server()
         {
             _connections = new List<Connection>();
             listener = new TcpListener(IPAddress.Parse(IP_ADRESS_STR),PORT);
-            thread = new Thread(Listen);
+            thread = new Thread(WaitForConnections);
         }
-
         public void Start()
         {
             thread.Start();
         }
-
-        private void Listen()
+        private void WaitForConnections()
         {
             listener.Start();
             Connection bCon;
@@ -42,15 +39,6 @@ namespace TTT
                 }
             }
         }
-
-        private void SendStr(TcpClient tcpClient, string str)
-        {
-            byte[] sendByte;
-            sendByte = Encoding.ASCII.GetBytes(str);
-            Console.WriteLine("Sent msg - " + str + $" to {tcpClient.Client.RemoteEndPoint}");
-            _ = tcpClient.Client.Send(sendByte, sendByte.Length, 0);
-        }
-
         public void ConnectionLost(Connection connection)
         {
             if (_connections.Contains(connection))

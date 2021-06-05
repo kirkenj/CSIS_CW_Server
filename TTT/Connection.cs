@@ -21,9 +21,9 @@ namespace TTT
         private const int CLIENT_PERIOD = 15;
         private const int MINUTE_MILISEC = 60000;
         private int _currentLevelTime = 0;
-        private int _prevLevelTime = 0;
         private int _clickedCircleCounter = 0;
         private int _fullCircleCounter = -1;
+        private bool _gameStarted = false;
 
         private readonly int[,] _levelCircleConfig = new int[3, 2]
         {
@@ -34,6 +34,7 @@ namespace TTT
 
         private Point _currentClickPoint = new Point();
         private bool _clickHandled = true;
+        private bool _endGameMsgSent = true;
 
         private int _currentCircleLifetime = 0;
         private readonly ServerCircle _currentCircle = new ServerCircle();
@@ -63,8 +64,7 @@ namespace TTT
                     while (tcpClient.Connected)
                     {
                         Thread.Sleep(CLIENT_PERIOD);
-                        
-                        if (_currentLevel >= 0)
+                        if (_gameStarted)
                         {
                             HandleGame();
                             if (!_currentCircleSent)
@@ -72,6 +72,11 @@ namespace TTT
                                 _currentCircleSent = true;
                                 SendStr(ServerCommands.TransportPoint + ": " + _currentCircle.ToString());
                             }
+                        }
+                        else if(!_endGameMsgSent)
+                        {
+                            _endGameMsgSent = true;
+                            SendStr(ServerCommands.Stop.ToString() + $" You_have_striked_{_clickedCircleCounter}/{_fullCircleCounter}_circles_for_{_currentLevelTime / 1000}_sec.");
                         }
                     }
                 }
@@ -82,12 +87,10 @@ namespace TTT
                         _server.ConnectionLost(this);
                     }
                 }
-
             });
             _bThread.Start(_tcpClient);
             _listenThread.Start();
         }
-
         private void HandleGame()
         {
             if(_currentCircleLifetime >= _levelCircleConfig[_currentLevel,1])
@@ -103,7 +106,6 @@ namespace TTT
                 }
                 _clickHandled = true;
             }
-
             if (_currentCircleKilled)
             {
                 _currentCircle.X = _random.Next(2 * _levelCircleConfig[_currentLevel, 0], _screenSize.Width - 2 * _levelCircleConfig[_currentLevel, 0]);
@@ -117,15 +119,11 @@ namespace TTT
             }
             if (_currentLevelTime >= MINUTE_MILISEC)
             {
-                _currentLevel = -1;
-                SendStr(ServerCommands.Stop.ToString() + $" You_have_striked_{_clickedCircleCounter}/{_fullCircleCounter}_circles_for_{_prevLevelTime/1000}_sec.");
+                StopGame();
             }
-            _prevLevelTime += CLIENT_PERIOD;
             _currentLevelTime += CLIENT_PERIOD;
             _currentCircleLifetime += CLIENT_PERIOD;
         }
-
-
         private void Listen()
         {
             try
@@ -148,8 +146,6 @@ namespace TTT
                 Console.WriteLine(ex.Message);
             }
         }
-
-
         private void HandleMsg(string msg)
         {
             string[] words = msg.Split();
@@ -174,38 +170,25 @@ namespace TTT
             }
             else if (words[0] == ServerCommands.StartLevel1.ToString())
             {
-                _currentLevelTime = 0;
-                _clickedCircleCounter = 0;
-                _fullCircleCounter = 0;
-                _currentLevel = 0;
-                SendStr($"{ServerCommands.StartLevel1}");
+                SetLevel(1);
             }
             else if (words[0] == ServerCommands.StartLevel2.ToString())
             {
-                _fullCircleCounter = 0;
-                _clickedCircleCounter = 0;
-                _currentLevelTime = 0;
-                _currentLevel = 1;
-                SendStr($"{ServerCommands.StartLevel2}");
+                SetLevel(2);
             }
             else if (words[0] == ServerCommands.StartLevel3.ToString())
             {
-                _fullCircleCounter = 0;
-                _clickedCircleCounter = 0;
-                _currentLevelTime = 0;
-                _currentLevel = 2;
-                SendStr($"{ServerCommands.StartLevel3}");
+                SetLevel(3);
             }
             else if (words[0] == ServerCommands.Stop.ToString())
             {
-                _currentLevelTime = MINUTE_MILISEC + 1;
+                StopGame();
             }
             else if (words[0] == ServerCommands.GameMessage.ToString() + ':')
             {
                 SendStr(ServerCommands.GameMessage + ": "+ words[1]);
             }
         }
-
         private void SendStr(string str)
         {
             byte[] sendByte;
@@ -213,6 +196,20 @@ namespace TTT
             _tcpClient.Client.Send(sendByte, sendByte.Length, 0);
             Console.WriteLine("Sent msg: " + '"' + str + '"' + $" to {_tcpClient.Client.RemoteEndPoint}");
         }
-
+        private void StopGame()
+        {
+            _gameStarted = false;
+            _endGameMsgSent = false;
+        }
+        private void SetLevel(int levelIDSince1)
+        {
+            _endGameMsgSent = false;
+            _gameStarted = true;
+            _fullCircleCounter = 0;
+            _clickedCircleCounter = 0;
+            _currentLevelTime = 0;
+            _currentLevel = levelIDSince1-1;
+            SendStr(ServerCommands.GameMessage.ToString() + $": Started_{levelIDSince1}_level");
+        }
     }
 }
