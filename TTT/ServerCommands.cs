@@ -1,4 +1,4 @@
-﻿namespace TTT
+﻿namespace CSIS_CW_Server
 {
     enum ServerCommands
     {

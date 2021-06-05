@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 
-namespace TTT
+namespace CSIS_CW_Server
 {
     class ServerCircle
     {

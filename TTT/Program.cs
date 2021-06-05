@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TTT
+﻿namespace CSIS_CW_Server
 {
     class Program
     {

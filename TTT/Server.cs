@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace TTT
+namespace CSIS_CW_Server
 {
     class Server
     {
