@@ -9,6 +9,7 @@
         TransportPoint,
         ClickTransport,
         InitData,
-        GameMessage
+        GameMessage,
+        CloseSocket
     }
 }

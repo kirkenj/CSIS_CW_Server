@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -11,31 +10,33 @@ namespace CSIS_CW_Server
     {
         private const string IP_ADRESS_STR = "127.0.0.1";
         private const int PORT = 11000;
-        private readonly TcpListener listener;
-        private readonly Thread thread;
+        private readonly TcpListener _listener;
+        private readonly Thread _thread;
         private readonly List<Connection> _connections;
         public Server()
         {
             _connections = new List<Connection>();
-            listener = new TcpListener(IPAddress.Parse(IP_ADRESS_STR),PORT);
-            thread = new Thread(WaitForConnections);
+            _listener = new TcpListener(IPAddress.Parse(IP_ADRESS_STR), PORT);
+            _thread = new Thread(WaitForConnections);
         }
         public void Start()
         {
-            thread.Start();
+            _thread.Start();
         }
         private void WaitForConnections()
         {
-            listener.Start();
+            _listener.Start();
             Connection bCon;
+            Console.WriteLine("Жду соединения...");
             while (true)
             {
                 Thread.Sleep(15);
-                if (listener.Pending())
+                if (_listener.Pending())
                 {
-                    bCon = new Connection(listener.AcceptTcpClient(),this);
+                    bCon = new Connection(_listener.AcceptTcpClient(), this);
                     _connections.Add(bCon);
                     bCon.Start();
+
                 }
             }
         }
@@ -43,20 +44,20 @@ namespace CSIS_CW_Server
         {
             if (_connections.Contains(connection))
             {
-                Console.WriteLine($"Connection removed: {connection.EndPoint}");
+                Console.WriteLine($"Соединение разорвано: {connection.EndPoint}");
                 _connections.Remove(connection);
                 PrintConnections();
             }
         }
         private void PrintConnections()
         {
-            if(_connections.Count == 0)
+            if (_connections.Count == 0)
             {
-                Console.WriteLine("No connections");
+                Console.WriteLine("Нет соединений");
             }
             else
             {
-                Console.WriteLine("Current connections:");
+                Console.WriteLine("Текущие соединения:");
                 foreach (var el in _connections)
                 {
                     Console.WriteLine(el.EndPoint);
